@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Color Season" />
-  <title>Color Season Analyzer</title>
+  <meta name="apple-mobile-web-app-title" content="Moja Sezona" />
+  <title>Analizator Boja</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, 'Helvetica Neue', sans-serif; background: #FAFAFA; min-height: 100vh; transition: background 0.6s; }
@@ -16,7 +16,6 @@
     .card { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 12px rgba(0,0,0,0.05); }
     .btn-primary { width: 100%; padding: 16px; background: #1a1a1a; color: #fff; border: none; border-radius: 12px; font-size: 15px; cursor: pointer; letter-spacing: 0.5px; }
     .btn-secondary { width: 100%; padding: 16px; background: transparent; color: #999; border: 1.5px solid #e0e0e0; border-radius: 12px; font-size: 14px; cursor: pointer; margin-top: 8px; }
-    .drop-zone { border: 1.5px dashed #ddd; border-radius: 16px; padding: 40px; text-align: center; cursor: pointer; background: #fff; }
     .photo-grid { display: flex; gap: 12px; margin-bottom: 16px; }
     .photo-slot { flex: 1; position: relative; }
     .photo-slot img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; display: block; }
@@ -36,40 +35,39 @@
     .avoid-x { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; font-size: 18px; font-weight: 300; text-shadow: 0 1px 3px rgba(0,0,0,0.4); pointer-events: none; }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .hidden { display: none; }
-    #phase-upload, #phase-analyzing, #phase-result { }
   </style>
 </head>
 <body>
 <div id="app">
   <div style="text-align:center;margin-bottom:48px;">
-    <div class="label" style="margin-bottom:12px;">Color Analysis</div>
-    <h1>Find Your Season</h1>
+    <div class="label" style="margin-bottom:12px;">Analiza Boja</div>
+    <h1>Otkrij Svoju Sezonu</h1>
   </div>
 
   <!-- UPLOAD -->
   <div id="phase-upload">
     <div style="font-size:13px;color:#888;text-align:center;margin-bottom:20px;">
-      Upload up to <strong>3 photos</strong> for a more accurate result.
+      Dodaj do <strong>3 fotografije</strong> za precizniji rezultat.
     </div>
     <div class="photo-grid" id="photo-grid"></div>
     <input type="file" id="file-input" accept="image/*" multiple style="display:none" />
     <div id="error-msg" style="color:#c0392b;font-size:13px;text-align:center;margin-bottom:12px;"></div>
     <div id="photo-count" style="font-size:12px;color:#aaa;text-align:center;margin-bottom:12px;"></div>
-    <button class="btn-primary hidden" id="analyze-btn" onclick="analyze()">Analyze My Colors</button>
-    <p style="text-align:center;font-size:12px;color:#bbb;margin-top:20px;">Best results: natural lighting, no filters, neutral background.</p>
+    <button class="btn-primary hidden" id="analyze-btn" onclick="analyze()">Analiziraj Moje Boje</button>
+    <p style="text-align:center;font-size:12px;color:#bbb;margin-top:20px;">Najbolji rezultati: prirodno osvetljenje, bez filtera, neutralna pozadina.</p>
   </div>
 
   <!-- ANALYZING -->
   <div id="phase-analyzing" class="hidden" style="text-align:center;padding:80px 0;">
     <div class="spinner">✦</div>
-    <div style="font-size:16px;color:#555;margin:24px 0 8px;" id="analyzing-text">Analyzing photos…</div>
-    <div style="font-size:13px;color:#aaa;">Cross-referencing for accuracy</div>
+    <div style="font-size:16px;color:#555;margin:24px 0 8px;" id="analyzing-text">Analiziranje fotografija…</div>
+    <div style="font-size:13px;color:#aaa;">Ukrštanje podataka radi preciznosti</div>
   </div>
 
   <!-- RESULT -->
   <div id="phase-result" class="hidden">
     <div style="text-align:center;margin-bottom:40px;">
-      <div style="display:inline-block;background:#fff;border-radius:20px;padding:6px 20px;font-size:12px;color:#999;letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;box-shadow:0 1px 8px rgba(0,0,0,0.06);">Your Season</div>
+      <div style="display:inline-block;background:#fff;border-radius:20px;padding:6px 20px;font-size:12px;color:#999;letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;box-shadow:0 1px 8px rgba(0,0,0,0.06);">Tvoja Sezona</div>
       <h2 id="result-season" style="font-size:48px;font-weight:300;letter-spacing:-1px;margin:0 0 8px;"></h2>
       <div id="result-tagline" class="label" style="margin-bottom:12px;"></div>
       <div class="confidence-badge"><span class="dot" id="conf-dot"></span><span id="conf-text"></span></div>
@@ -81,51 +79,53 @@
       <div id="result-notes" style="margin-top:10px;font-size:12px;color:#aaa;font-style:italic;"></div>
     </div>
     <div class="card">
-      <div class="label" style="margin-bottom:16px;">Your Best Colors</div>
+      <div class="label" style="margin-bottom:16px;">Tvoje Najbolje Boje</div>
       <div class="swatches" id="result-best"></div>
     </div>
     <div class="card">
-      <div class="label" style="margin-bottom:16px;">What Works For You</div>
+      <div class="label" style="margin-bottom:16px;">Šta Ti Odgovara</div>
       <div id="result-categories"></div>
     </div>
     <div class="card">
-      <div class="label" style="margin-bottom:16px;">Colors to Avoid</div>
+      <div class="label" style="margin-bottom:16px;">Boje Koje Treba Izbegavati</div>
       <div class="swatches" id="result-avoid"></div>
     </div>
-    <button class="btn-secondary" onclick="reset()">Start Over</button>
+    <button class="btn-secondary" onclick="reset()">Počni Iznova</button>
   </div>
 </div>
 
 <script>
 const SEASONS = {
-  Spring: {
-    tagline: "Warm · Light · Clear", accent: "#F4A460", bg: "#FFF9F0",
+  Proleće: {
+    tagline: "Toplo · Svetlo · Jasno", accent: "#F4A460", bg: "#FFF9F0",
     best: ["#F4A460","#FFD700","#FF7F50","#98FB98","#87CEEB","#FFDAB9","#FFA07A","#90EE90","#F0E68C","#FFB347","#E8A87C","#C8E6C9"],
     avoid: ["#000080","#8B008B","#696969","#2F4F4F","#800000","#4B0082"],
-    categories: { Clothing: ["Peach","Warm coral","Golden yellow","Warm greens","Light camel"], Accessories: ["Gold jewelry","Warm brown leather","Ivory scarves"], Makeup: ["Peach blush","Warm nude lips","Bronze eyeshadow"] }
+    categories: { Odeća: ["Breskva","Topla korala","Zlatnožuta","Topla zelena","Svetla kamel"], Dodaci: ["Zlatni nakit","Topla smeđa koža","Krem šalovi"], Šminka: ["Breskva rumenilo","Topli nude usne","Bronzani senke"] }
   },
-  Summer: {
-    tagline: "Cool · Soft · Muted", accent: "#7B9BB8", bg: "#F5F8FF",
+  Leto: {
+    tagline: "Hladno · Meko · Prigušeno", accent: "#7B9BB8", bg: "#F5F8FF",
     best: ["#B0C4DE","#DDA0DD","#FFB6C1","#E6E6FA","#AFEEEE","#D8BFD8","#B0E0E6","#F0F8FF","#C8A2C8","#87CEEB","#E8D5E8","#C5D5E8"],
     avoid: ["#FF4500","#FF8C00","#8B4513","#DAA520","#FF6347","#B8860B"],
-    categories: { Clothing: ["Dusty rose","Lavender","Soft blue","Mauve","Cool grey"], Accessories: ["Silver jewelry","Rose gold","Soft pastel scarves"], Makeup: ["Rose blush","Berry lips","Soft mauve eyeshadow"] }
+    categories: { Odeća: ["Prašnjava ruža","Lavanda","Meka plava","Mov","Hladno siva"], Dodaci: ["Srebrni nakit","Roze zlato","Meki pastelni šalovi"], Šminka: ["Ruža rumenilo","Bobičaste usne","Meki mov senke"] }
   },
-  Autumn: {
-    tagline: "Warm · Deep · Rich", accent: "#B8622A", bg: "#FFF8F4",
+  Jesen: {
+    tagline: "Toplo · Duboko · Bogato", accent: "#B8622A", bg: "#FFF8F4",
     best: ["#B8622A","#8B6914","#556B2F","#8B4513","#CD853F","#6B8E23","#A0522D","#BDB76B","#D2691E","#8FBC8F","#C19A6B","#7B9E6B"],
     avoid: ["#FF69B4","#00FFFF","#E0E0E0","#FFB6C1","#87CEEB","#DDA0DD"],
-    categories: { Clothing: ["Rust","Olive green","Mustard","Burnt orange","Deep brown"], Accessories: ["Gold jewelry","Brown leather","Warm tortoiseshell"], Makeup: ["Terracotta blush","Warm brown lips","Earthy eyeshadow"] }
+    categories: { Odeća: ["Rđa","Maslinasta zelena","Senf","Narandžasta","Tamno smeđa"], Dodaci: ["Zlatni nakit","Smeđa koža","Topla kornjačevina"], Šminka: ["Terakota rumenilo","Toplo smeđe usne","Zemljane senke"] }
   },
-  Winter: {
-    tagline: "Cool · Deep · Bold", accent: "#2C3E6B", bg: "#F5F5F8",
+  Zima: {
+    tagline: "Hladno · Duboko · Smelo", accent: "#2C3E6B", bg: "#F5F5F8",
     best: ["#2C3E6B","#8B0000","#006400","#4B0082","#191970","#DC143C","#000080","#008080","#800000","#2E8B57","#1C1C8A","#C0392B"],
     avoid: ["#F5DEB3","#FFDEAD","#DEB887","#D2B48C","#BDB76B","#F0E68C"],
-    categories: { Clothing: ["True white","Black","Royal blue","Emerald","Fuchsia"], Accessories: ["Silver jewelry","Black leather","Bold jewel-toned scarves"], Makeup: ["Berry blush","Deep red lips","Smoky eyeshadow"] }
+    categories: { Odeća: ["Čisto bela","Crna","Kraljevska plava","Smaragdna","Fuksija"], Dodaci: ["Srebrni nakit","Crna koža","Šalovi u boji dragulja"], Šminka: ["Bobičasto rumenilo","Tamno crvene usne","Zadimljene senke"] }
   }
 };
 
+const seasonMap = { Spring: "Proleće", Summer: "Leto", Autumn: "Jesen", Winter: "Zima" };
+const confLabels = { High: "Visoka", Medium: "Srednja", Low: "Niska" };
 const confColors = { High: "#27ae60", Medium: "#f39c12", Low: "#c0392b" };
-let photos = []; // [{src, base64}]
+let photos = [];
 const MAX = 3;
 
 function show(id) { document.getElementById(id).classList.remove("hidden"); }
@@ -144,15 +144,18 @@ function renderGrid() {
     const add = document.createElement("div");
     add.className = "add-slot";
     add.style.flex = photos.length === 0 ? "3" : "1";
-    if (photos.length === 0) { add.style.aspectRatio = "unset"; add.style.minHeight = "180px"; add.style.flexDirection = "column"; add.style.gap = "8px"; add.innerHTML = `<div style="font-size:36px;">+</div><div style="font-size:14px;color:#555;">Drop photos here</div><div style="font-size:12px;color:#aaa;">or click to browse</div>`; }
-    else add.textContent = "+";
+    if (photos.length === 0) {
+      add.style.aspectRatio = "unset"; add.style.minHeight = "180px";
+      add.style.flexDirection = "column"; add.style.gap = "8px";
+      add.innerHTML = `<div style="font-size:36px;">+</div><div style="font-size:14px;color:#555;">Dodaj fotografije</div><div style="font-size:12px;color:#aaa;">ili klikni da pretražiš</div>`;
+    } else add.textContent = "+";
     add.onclick = () => document.getElementById("file-input").click();
     grid.appendChild(add);
   }
   const count = document.getElementById("photo-count");
   const btn = document.getElementById("analyze-btn");
   if (photos.length > 0) {
-    count.textContent = `${photos.length} of ${MAX} photos added${photos.length < MAX ? " · Add more for better accuracy" : ""}`;
+    count.textContent = `${photos.length} od ${MAX} fotografija dodato${photos.length < MAX ? " · Dodaj još za bolju preciznost" : ""}`;
     btn.classList.remove("hidden");
   } else {
     count.textContent = "";
@@ -164,19 +167,8 @@ function removePhoto(i) { photos.splice(i, 1); renderGrid(); }
 
 document.getElementById("file-input").addEventListener("change", async (e) => {
   const files = Array.from(e.target.files).slice(0, MAX - photos.length);
-  for (const f of files) {
-    const result = await readFile(f);
-    photos.push(result);
-  }
-  e.target.value = "";
-  renderGrid();
-});
-
-document.querySelector(".photo-grid") && document.getElementById("photo-grid").addEventListener("dragover", e => e.preventDefault());
-document.getElementById("photo-grid") && document.getElementById("photo-grid").addEventListener("drop", async (e) => {
-  e.preventDefault();
-  const files = Array.from(e.dataTransfer.files).slice(0, MAX - photos.length);
   for (const f of files) photos.push(await readFile(f));
+  e.target.value = "";
   renderGrid();
 });
 
@@ -191,7 +183,7 @@ function readFile(file) {
 async function analyze() {
   if (!photos.length) return;
   hide("phase-upload"); show("phase-analyzing");
-  document.getElementById("analyzing-text").textContent = `Analyzing ${photos.length} photo${photos.length > 1 ? "s" : ""}…`;
+  document.getElementById("analyzing-text").textContent = `Analiziranje ${photos.length} fotografij${photos.length === 1 ? "e" : "a"}…`;
   document.getElementById("error-msg").textContent = "";
   try {
     const imageBlocks = photos.map(p => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: p.base64 } }));
@@ -201,7 +193,7 @@ async function analyze() {
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 1000,
-        messages: [{ role: "user", content: [...imageBlocks, { type: "text", text: `You are given ${photos.length} photo(s) of the same person. Analyze their coloring across all photos to determine their color season for fashion. Consider all photos together. Look at skin undertone, hair color, and eye color.\n\nRespond ONLY with a valid JSON object, no markdown:\n{\n  "season": "Spring" | "Summer" | "Autumn" | "Winter",\n  "confidence": "High" | "Medium" | "Low",\n  "skinTone": "brief description",\n  "hairColor": "brief description",\n  "eyeColor": "brief description",\n  "reasoning": "2-3 sentences explaining why this season fits",\n  "photoNotes": "brief note on photo quality or consistency"\n}\n\nIf no person visible: {"error": "No person detected"}` }] }]
+        messages: [{ role: "user", content: [...imageBlocks, { type: "text", text: `You are given ${photos.length} photo(s) of the same person. Analyze their coloring across all photos to determine their color season for fashion. Look at skin undertone, hair color, and eye color.\n\nRespond ONLY with a valid JSON object, no markdown:\n{\n  "season": "Spring" | "Summer" | "Autumn" | "Winter",\n  "confidence": "High" | "Medium" | "Low",\n  "skinTone": "kratak opis tena na srpskom",\n  "hairColor": "kratak opis boje kose na srpskom",\n  "eyeColor": "kratak opis boje očiju na srpskom",\n  "reasoning": "2-3 rečenice na srpskom zašto odgovara ova sezona",\n  "photoNotes": "kratak komentar na srpskom o kvalitetu fotografija"\n}\n\nIf no person visible: {"error": "Osoba nije pronađena"}` }] }]
       })
     });
     const data = await res.json();
@@ -209,7 +201,7 @@ async function analyze() {
     const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
     if (parsed.error) { showError(parsed.error); return; }
     showResult(parsed);
-  } catch (e) { showError("Something went wrong. Please try again."); }
+  } catch (e) { showError("Nešto je pošlo po zlu. Pokušaj ponovo."); }
 }
 
 function showError(msg) {
@@ -219,35 +211,30 @@ function showError(msg) {
 
 function showResult(data) {
   hide("phase-analyzing");
-  const s = SEASONS[data.season];
+  const seasonSr = seasonMap[data.season] || data.season;
+  const s = SEASONS[seasonSr];
   document.body.style.background = s.bg;
-  document.getElementById("result-season").textContent = data.season;
+  document.getElementById("result-season").textContent = seasonSr;
   document.getElementById("result-season").style.color = s.accent;
   document.getElementById("result-tagline").textContent = s.tagline;
   document.getElementById("conf-dot").style.background = confColors[data.confidence] || "#999";
-  document.getElementById("conf-text").textContent = `${data.confidence} confidence · based on ${photos.length} photo${photos.length > 1 ? "s" : ""}`;
+  document.getElementById("conf-text").textContent = `${confLabels[data.confidence] || data.confidence} pouzdanost · ${photos.length} fotografij${photos.length === 1 ? "a" : "e"}`;
 
-  // Photos
   const rp = document.getElementById("result-photos");
   rp.innerHTML = photos.map(p => `<img src="${p.src}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;" />`).join("");
 
-  // Traits
-  const traits = document.getElementById("result-traits");
-  traits.innerHTML = [["Skin", data.skinTone], ["Hair", data.hairColor], ["Eyes", data.eyeColor]]
+  document.getElementById("result-traits").innerHTML = [["Ten", data.skinTone], ["Kosa", data.hairColor], ["Oči", data.eyeColor]]
     .map(([l, v]) => `<div style="flex:1 1 120px;"><div class="trait-label">${l}</div><div class="trait-val">${v}</div></div>`).join("");
 
   document.getElementById("result-reasoning").textContent = data.reasoning;
   document.getElementById("result-notes").textContent = data.photoNotes || "";
 
-  // Best colors
   document.getElementById("result-best").innerHTML = s.best.map(c => `<div class="swatch" style="background:${c};" title="${c}"></div>`).join("");
 
-  // Categories
   document.getElementById("result-categories").innerHTML = Object.entries(s.categories).map(([cat, items]) =>
     `<div style="margin-bottom:14px;"><div style="font-size:13px;font-weight:500;color:#333;margin-bottom:6px;">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${items.map(i => `<span class="tag">${i}</span>`).join("")}</div></div>`
   ).join("");
 
-  // Avoid
   document.getElementById("result-avoid").innerHTML = s.avoid.map(c =>
     `<div class="avoid-swatch"><div class="swatch" style="background:${c};"></div><div class="avoid-x">×</div></div>`
   ).join("");
