@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Color Season" />
+  <title>Color Season Analyzer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, 'Helvetica Neue', sans-serif; background: #FAFAFA; min-height: 100vh; transition: background 0.6s; }
+    #app { max-width: 640px; margin: 0 auto; padding: 48px 24px; }
+    h1 { font-size: 32px; font-weight: 300; color: #1a1a1a; letter-spacing: -0.5px; }
+    .label { font-size: 13px; letter-spacing: 4px; color: #999; text-transform: uppercase; }
+    .card { background: #fff; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 12px rgba(0,0,0,0.05); }
+    .btn-primary { width: 100%; padding: 16px; background: #1a1a1a; color: #fff; border: none; border-radius: 12px; font-size: 15px; cursor: pointer; letter-spacing: 0.5px; }
+    .btn-secondary { width: 100%; padding: 16px; background: transparent; color: #999; border: 1.5px solid #e0e0e0; border-radius: 12px; font-size: 14px; cursor: pointer; margin-top: 8px; }
+    .drop-zone { border: 1.5px dashed #ddd; border-radius: 16px; padding: 40px; text-align: center; cursor: pointer; background: #fff; }
+    .photo-grid { display: flex; gap: 12px; margin-bottom: 16px; }
+    .photo-slot { flex: 1; position: relative; }
+    .photo-slot img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; display: block; }
+    .photo-remove { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,0.55); color: #fff; border: none; cursor: pointer; font-size: 14px; line-height: 24px; text-align: center; padding: 0; }
+    .add-slot { flex: 1; aspect-ratio: 1; border: 1.5px dashed #ddd; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #fff; font-size: 24px; color: #aaa; }
+    .swatch { width: 44px; height: 44px; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.1); display: inline-block; }
+    .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+    .tag { font-size: 12px; background: #f5f5f5; color: #555; padding: 4px 10px; border-radius: 20px; display: inline-block; }
+    .spinner { font-size: 40px; animation: spin 2s linear infinite; display: inline-block; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .confidence-badge { display: inline-flex; align-items: center; gap: 6px; background: #fff; border-radius: 20px; padding: 4px 14px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); font-size: 12px; color: #666; }
+    .trait-label { font-size: 11px; color: #aaa; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
+    .trait-val { font-size: 14px; color: #333; }
+    .traits { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+    .avoid-swatch { position: relative; width: 44px; height: 44px; display: inline-block; }
+    .avoid-swatch .swatch { opacity: 0.6; }
+    .avoid-x { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; font-size: 18px; font-weight: 300; text-shadow: 0 1px 3px rgba(0,0,0,0.4); pointer-events: none; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .hidden { display: none; }
+    #phase-upload, #phase-analyzing, #phase-result { }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div style="text-align:center;margin-bottom:48px;">
+    <div class="label" style="margin-bottom:12px;">Color Analysis</div>
+    <h1>Find Your Season</h1>
+  </div>
+
+  <!-- UPLOAD -->
+  <div id="phase-upload">
+    <div style="font-size:13px;color:#888;text-align:center;margin-bottom:20px;">
+      Upload up to <strong>3 photos</strong> for a more accurate result.
+    </div>
+    <div class="photo-grid" id="photo-grid"></div>
+    <input type="file" id="file-input" accept="image/*" multiple style="display:none" />
+    <div id="error-msg" style="color:#c0392b;font-size:13px;text-align:center;margin-bottom:12px;"></div>
+    <div id="photo-count" style="font-size:12px;color:#aaa;text-align:center;margin-bottom:12px;"></div>
+    <button class="btn-primary hidden" id="analyze-btn" onclick="analyze()">Analyze My Colors</button>
+    <p style="text-align:center;font-size:12px;color:#bbb;margin-top:20px;">Best results: natural lighting, no filters, neutral background.</p>
+  </div>
+
+  <!-- ANALYZING -->
+  <div id="phase-analyzing" class="hidden" style="text-align:center;padding:80px 0;">
+    <div class="spinner">✦</div>
+    <div style="font-size:16px;color:#555;margin:24px 0 8px;" id="analyzing-text">Analyzing photos…</div>
+    <div style="font-size:13px;color:#aaa;">Cross-referencing for accuracy</div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="phase-result" class="hidden">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div style="display:inline-block;background:#fff;border-radius:20px;padding:6px 20px;font-size:12px;color:#999;letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;box-shadow:0 1px 8px rgba(0,0,0,0.06);">Your Season</div>
+      <h2 id="result-season" style="font-size:48px;font-weight:300;letter-spacing:-1px;margin:0 0 8px;"></h2>
+      <div id="result-tagline" class="label" style="margin-bottom:12px;"></div>
+      <div class="confidence-badge"><span class="dot" id="conf-dot"></span><span id="conf-text"></span></div>
+    </div>
+    <div class="card">
+      <div id="result-photos" style="display:flex;gap:8px;margin-bottom:20px;"></div>
+      <div class="traits" id="result-traits"></div>
+      <div style="padding-top:16px;border-top:1px solid #f0f0f0;font-size:14px;color:#555;line-height:1.7;" id="result-reasoning"></div>
+      <div id="result-notes" style="margin-top:10px;font-size:12px;color:#aaa;font-style:italic;"></div>
+    </div>
+    <div class="card">
+      <div class="label" style="margin-bottom:16px;">Your Best Colors</div>
+      <div class="swatches" id="result-best"></div>
+    </div>
+    <div class="card">
+      <div class="label" style="margin-bottom:16px;">What Works For You</div>
+      <div id="result-categories"></div>
+    </div>
+    <div class="card">
+      <div class="label" style="margin-bottom:16px;">Colors to Avoid</div>
+      <div class="swatches" id="result-avoid"></div>
+    </div>
+    <button class="btn-secondary" onclick="reset()">Start Over</button>
+  </div>
+</div>
+
+<script>
+const SEASONS = {
+  Spring: {
+    tagline: "Warm · Light · Clear", accent: "#F4A460", bg: "#FFF9F0",
+    best: ["#F4A460","#FFD700","#FF7F50","#98FB98","#87CEEB","#FFDAB9","#FFA07A","#90EE90","#F0E68C","#FFB347","#E8A87C","#C8E6C9"],
+    avoid: ["#000080","#8B008B","#696969","#2F4F4F","#800000","#4B0082"],
+    categories: { Clothing: ["Peach","Warm coral","Golden yellow","Warm greens","Light camel"], Accessories: ["Gold jewelry","Warm brown leather","Ivory scarves"], Makeup: ["Peach blush","Warm nude lips","Bronze eyeshadow"] }
+  },
+  Summer: {
+    tagline: "Cool · Soft · Muted", accent: "#7B9BB8", bg: "#F5F8FF",
+    best: ["#B0C4DE","#DDA0DD","#FFB6C1","#E6E6FA","#AFEEEE","#D8BFD8","#B0E0E6","#F0F8FF","#C8A2C8","#87CEEB","#E8D5E8","#C5D5E8"],
+    avoid: ["#FF4500","#FF8C00","#8B4513","#DAA520","#FF6347","#B8860B"],
+    categories: { Clothing: ["Dusty rose","Lavender","Soft blue","Mauve","Cool grey"], Accessories: ["Silver jewelry","Rose gold","Soft pastel scarves"], Makeup: ["Rose blush","Berry lips","Soft mauve eyeshadow"] }
+  },
+  Autumn: {
+    tagline: "Warm · Deep · Rich", accent: "#B8622A", bg: "#FFF8F4",
+    best: ["#B8622A","#8B6914","#556B2F","#8B4513","#CD853F","#6B8E23","#A0522D","#BDB76B","#D2691E","#8FBC8F","#C19A6B","#7B9E6B"],
+    avoid: ["#FF69B4","#00FFFF","#E0E0E0","#FFB6C1","#87CEEB","#DDA0DD"],
+    categories: { Clothing: ["Rust","Olive green","Mustard","Burnt orange","Deep brown"], Accessories: ["Gold jewelry","Brown leather","Warm tortoiseshell"], Makeup: ["Terracotta blush","Warm brown lips","Earthy eyeshadow"] }
+  },
+  Winter: {
+    tagline: "Cool · Deep · Bold", accent: "#2C3E6B", bg: "#F5F5F8",
+    best: ["#2C3E6B","#8B0000","#006400","#4B0082","#191970","#DC143C","#000080","#008080","#800000","#2E8B57","#1C1C8A","#C0392B"],
+    avoid: ["#F5DEB3","#FFDEAD","#DEB887","#D2B48C","#BDB76B","#F0E68C"],
+    categories: { Clothing: ["True white","Black","Royal blue","Emerald","Fuchsia"], Accessories: ["Silver jewelry","Black leather","Bold jewel-toned scarves"], Makeup: ["Berry blush","Deep red lips","Smoky eyeshadow"] }
+  }
+};
+
+const confColors = { High: "#27ae60", Medium: "#f39c12", Low: "#c0392b" };
+let photos = []; // [{src, base64}]
+const MAX = 3;
+
+function show(id) { document.getElementById(id).classList.remove("hidden"); }
+function hide(id) { document.getElementById(id).classList.add("hidden"); }
+
+function renderGrid() {
+  const grid = document.getElementById("photo-grid");
+  grid.innerHTML = "";
+  photos.forEach((p, i) => {
+    const slot = document.createElement("div");
+    slot.className = "photo-slot";
+    slot.innerHTML = `<img src="${p.src}" /><button class="photo-remove" onclick="removePhoto(${i})">×</button>`;
+    grid.appendChild(slot);
+  });
+  if (photos.length < MAX) {
+    const add = document.createElement("div");
+    add.className = "add-slot";
+    add.style.flex = photos.length === 0 ? "3" : "1";
+    if (photos.length === 0) { add.style.aspectRatio = "unset"; add.style.minHeight = "180px"; add.style.flexDirection = "column"; add.style.gap = "8px"; add.innerHTML = `<div style="font-size:36px;">+</div><div style="font-size:14px;color:#555;">Drop photos here</div><div style="font-size:12px;color:#aaa;">or click to browse</div>`; }
+    else add.textContent = "+";
+    add.onclick = () => document.getElementById("file-input").click();
+    grid.appendChild(add);
+  }
+  const count = document.getElementById("photo-count");
+  const btn = document.getElementById("analyze-btn");
+  if (photos.length > 0) {
+    count.textContent = `${photos.length} of ${MAX} photos added${photos.length < MAX ? " · Add more for better accuracy" : ""}`;
+    btn.classList.remove("hidden");
+  } else {
+    count.textContent = "";
+    btn.classList.add("hidden");
+  }
+}
+
+function removePhoto(i) { photos.splice(i, 1); renderGrid(); }
+
+document.getElementById("file-input").addEventListener("change", async (e) => {
+  const files = Array.from(e.target.files).slice(0, MAX - photos.length);
+  for (const f of files) {
+    const result = await readFile(f);
+    photos.push(result);
+  }
+  e.target.value = "";
+  renderGrid();
+});
+
+document.querySelector(".photo-grid") && document.getElementById("photo-grid").addEventListener("dragover", e => e.preventDefault());
+document.getElementById("photo-grid") && document.getElementById("photo-grid").addEventListener("drop", async (e) => {
+  e.preventDefault();
+  const files = Array.from(e.dataTransfer.files).slice(0, MAX - photos.length);
+  for (const f of files) photos.push(await readFile(f));
+  renderGrid();
+});
+
+function readFile(file) {
+  return new Promise((res) => {
+    const r = new FileReader();
+    r.onload = (e) => { const src = e.target.result; res({ src, base64: src.split(",")[1] }); };
+    r.readAsDataURL(file);
+  });
+}
+
+async function analyze() {
+  if (!photos.length) return;
+  hide("phase-upload"); show("phase-analyzing");
+  document.getElementById("analyzing-text").textContent = `Analyzing ${photos.length} photo${photos.length > 1 ? "s" : ""}…`;
+  document.getElementById("error-msg").textContent = "";
+  try {
+    const imageBlocks = photos.map(p => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: p.base64 } }));
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: [...imageBlocks, { type: "text", text: `You are given ${photos.length} photo(s) of the same person. Analyze their coloring across all photos to determine their color season for fashion. Consider all photos together. Look at skin undertone, hair color, and eye color.\n\nRespond ONLY with a valid JSON object, no markdown:\n{\n  "season": "Spring" | "Summer" | "Autumn" | "Winter",\n  "confidence": "High" | "Medium" | "Low",\n  "skinTone": "brief description",\n  "hairColor": "brief description",\n  "eyeColor": "brief description",\n  "reasoning": "2-3 sentences explaining why this season fits",\n  "photoNotes": "brief note on photo quality or consistency"\n}\n\nIf no person visible: {"error": "No person detected"}` }] }]
+      })
+    });
+    const data = await res.json();
+    const text = (data.content || []).find(b => b.type === "text")?.text || "";
+    const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+    if (parsed.error) { showError(parsed.error); return; }
+    showResult(parsed);
+  } catch (e) { showError("Something went wrong. Please try again."); }
+}
+
+function showError(msg) {
+  hide("phase-analyzing"); show("phase-upload");
+  document.getElementById("error-msg").textContent = msg;
+}
+
+function showResult(data) {
+  hide("phase-analyzing");
+  const s = SEASONS[data.season];
+  document.body.style.background = s.bg;
+  document.getElementById("result-season").textContent = data.season;
+  document.getElementById("result-season").style.color = s.accent;
+  document.getElementById("result-tagline").textContent = s.tagline;
+  document.getElementById("conf-dot").style.background = confColors[data.confidence] || "#999";
+  document.getElementById("conf-text").textContent = `${data.confidence} confidence · based on ${photos.length} photo${photos.length > 1 ? "s" : ""}`;
+
+  // Photos
+  const rp = document.getElementById("result-photos");
+  rp.innerHTML = photos.map(p => `<img src="${p.src}" style="width:72px;height:72px;border-radius:10px;object-fit:cover;" />`).join("");
+
+  // Traits
+  const traits = document.getElementById("result-traits");
+  traits.innerHTML = [["Skin", data.skinTone], ["Hair", data.hairColor], ["Eyes", data.eyeColor]]
+    .map(([l, v]) => `<div style="flex:1 1 120px;"><div class="trait-label">${l}</div><div class="trait-val">${v}</div></div>`).join("");
+
+  document.getElementById("result-reasoning").textContent = data.reasoning;
+  document.getElementById("result-notes").textContent = data.photoNotes || "";
+
+  // Best colors
+  document.getElementById("result-best").innerHTML = s.best.map(c => `<div class="swatch" style="background:${c};" title="${c}"></div>`).join("");
+
+  // Categories
+  document.getElementById("result-categories").innerHTML = Object.entries(s.categories).map(([cat, items]) =>
+    `<div style="margin-bottom:14px;"><div style="font-size:13px;font-weight:500;color:#333;margin-bottom:6px;">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${items.map(i => `<span class="tag">${i}</span>`).join("")}</div></div>`
+  ).join("");
+
+  // Avoid
+  document.getElementById("result-avoid").innerHTML = s.avoid.map(c =>
+    `<div class="avoid-swatch"><div class="swatch" style="background:${c};"></div><div class="avoid-x">×</div></div>`
+  ).join("");
+
+  show("phase-result");
+}
+
+function reset() {
+  photos = [];
+  document.body.style.background = "#FAFAFA";
+  hide("phase-result"); show("phase-upload");
+  renderGrid();
+}
+
+renderGrid();
+</script>
+</body>
+</html>
